@@ -1,10 +1,12 @@
 <?php
+
 namespace AppBundle\Controller;
 
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
 
 class ItemController extends Controller
 {
@@ -12,53 +14,122 @@ class ItemController extends Controller
      * @Route("/list")
      */
     public function listAction(Request $request) {
-        // Trying to connect to Database
-        $mysqli = new \mysqli("login-67.hoststar.ch","inf17s","jL6LCigmf!YB8Hh","inf17s");
+        // return false wenn kein Zugriff
+        if (!$this->checkAccess($request)) {
+            // code wird ausgeführt wenn kein Zugriff
+            return $this->redirect("/login");
+        }
 
-        $mysqli->set_charset('utf8');
+        $mysqli = $this->getMysqli();
 
-        // Output Error Message on Error
-        if ($mysqli->connect_errno) {
-            echo "Failed to connect to MySQL: " . $mysqli->connect_error;
-            exit();
-        };
-
-        // Read from database
-        $sql = "SELECT * FROM gil_items";
+        // Daten aus Datenbank laden
+        $sql = "SELECT * FROM amo_items";
         $result = $mysqli->query($sql);
 
-        // Read as array
+        // Als Array auslesen
         $row = $result->fetch_all();
 
-        return $this->render("item/list.html.php",  ["items" => $row]);
-    } 
+        return $this->render("item/list.html.php", ["items" => $row, "username" => $request->getSession()->get('username')]);
+    }
 
     /**
      * @Route("/add")
      */
     public function addAction(Request $request) {
+        // return false wenn kein Zugriff
+        if (!$this->checkAccess($request)) {
+            // code wird ausgeführt wenn kein Zugriff
+            return $this->redirect("/login");
+        }
 
+        $itemCount = intval($request->get('count'));
+        $itemName = $request->get('name');
 
-        // Trying to connect to Database
+        $mysqli = $this->getMysqli();
+
+        $statement = $mysqli->prepare("INSERT INTO amo_items(amount, name) VALUES(?,?)");
+        $statement->bind_param("is", $itemCount, $itemName);
+        $statement->execute();
+
+        return $this->redirect("/list");
+    }
+
+    /**
+     * @Route("/delete")
+     */
+    public function deleteAction(Request $request) {
+        // return false wenn kein Zugriff
+        if (!$this->checkAccess($request)) {
+            // code wird ausgeführt wenn kein Zugriff
+            return $this->redirect("/login");
+        }
+
+        $idToDelete = intval($request->get('id'));
+
+        $mysqli = $this->getMysqli();
+
+        $statement = $mysqli->prepare("DELETE FROM amo_items WHERE id = ?");
+        $statement->bind_param("i", $idToDelete);
+        $statement->execute();
+
+        return $this->redirect("/list");
+    }
+
+    /**
+     * @Route("/edit");
+     */
+    public function editAction(Request $request) {
+        // return false wenn kein Zugriff
+        if (!$this->checkAccess($request)) {
+            // code wird ausgeführt wenn kein Zugriff
+            return $this->redirect("/login");
+        }
+
+        $idToEdit = $request->get('id');
+        $mysqli = $this->getMysqli();
+
+        if ($request->getMethod() == "POST") {
+            $itemCount = intval($request->get('count'));
+            $itemName = $request->get('name');
+
+            $statement = $mysqli->prepare("UPDATE amo_items SET amount = ?, name = ? WHERE id = ?");
+            $statement->bind_param("isi", $itemCount, $itemName, $idToEdit);
+            $statement->execute();
+
+            return $this->redirect("/list");
+        }
+
+        $sql = "SELECT * FROM amo_items WHERE id = " . intval($idToEdit);
+        $result = $mysqli->query($sql);
+
+        // Als Array auslesen
+        $item = $result->fetch_array(MYSQLI_ASSOC);
+
+        return $this->render("item/edit.html.php", ["item" => $item]);
+    }
+
+    private function getMysqli() {
+        // Versuche mit Datenbankserver zu verbinden
         $mysqli = new \mysqli("login-67.hoststar.ch","inf17s","jL6LCigmf!YB8Hh","inf17s");
 
         $mysqli->set_charset('utf8');
 
-        // Output Error Message on Error
+        // Bei einem Fehler -> Fehlermeldung ausgeben
         if ($mysqli->connect_errno) {
             echo "Failed to connect to MySQL: " . $mysqli->connect_error;
             exit();
-        };
+        }
 
-        $statement = $mysqli->prepare("INSERT INTO hil_items(amount, name) VALUES(?,?");
-        $statement->bind_param("is", $itemCount, $itemName);
+        return $mysqli;
+    }
 
-        $statement->execute();
+    private function checkAccess(Request $request) {
+        $session = $request->getSession();
 
-        return $this->redirect("/list");
+        if ($session->get('username')) {
+            return true;
+        }
 
-        echo"Füge ", $itemCount , " " , $itemName , " hinzu";
-        die('in add action');
+        return false;
     }
 }
-?>
