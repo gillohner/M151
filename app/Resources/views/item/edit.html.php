@@ -8,35 +8,25 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-    <title>Einkaufsliste - Login</title>
+    <title>Einkaufsliste</title>
 </head>
 <body>
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h1>Login</h1>
+            <h1>Eintrag editieren</h1>
 
-            <?php
-                if ($errormessage) {
-                    ?>
-                    <div class="alert alert-danger">
-                        <strong>Achtung!</strong> <?php echo $errormessage; ?>
-                    </div>
-                    <?php
-                }
-            ?>
-
-            <form action="/login" method="post">
+            <form action="?" method="post">
+                <input type="hidden" name="id" value="<?= $item['id'] ?>">
                 <div class="form-group">
-                    <label for="name">Benutzername</label>
-                    <input type="text" class="form-control" id="name" name="name">
+                    <label for="count">Anzahl</label>
+                    <input type="number" class="form-control" id="count" name="count" value="<?php echo $item['amount']; ?>">
                 </div>
                 <div class="form-group">
-                    <label for="password">Passwort</label>
-                    <input type="password" class="form-control" id="password" name="password">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="<?php echo $item['name']; ?>">
                 </div>
-                <button type="submit" class="btn btn-primary">Anmelden!</button>
-                <button type="button" onclick="window.location.href = 'http://symfony.local/registrieren';" class="btn btn-secondary">Registrieren!</button>
+                <button type="submit" class="btn btn-primary">Hinzufügen</button>
             </form>
 
         </div>
